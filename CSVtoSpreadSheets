@@ -1,0 +1,51 @@
+// Funcion k convierte archivos CSV a Google Sheet
+function convertirCSVaHojasDeCalculoMejorado() {
+  var carpetaId = '15335wcHgiVo4RA1hWOB0uC55GOl5ybdh'; // Reemplaza esto con el ID real de tu carpeta
+  var carpeta = DriveApp.getFolderById(carpetaId);
+  var archivos = carpeta.getFilesByType(MimeType.CSV);
+
+  while (archivos.hasNext()) {
+    var archivoCsv = archivos.next();
+    var contenidoCsv = archivoCsv.getBlob().getDataAsString();
+    var nombreArchivo = archivoCsv.getName().replace('.csv', '');
+
+    Logger.log('Convirtiendo el archivo CSV: ' + nombreArchivo);
+
+    var nuevaHoja = SpreadsheetApp.create(nombreArchivo);
+    var hoja = nuevaHoja.getSheets()[0];
+
+    // Dividir el contenido en filas y columnas, y normalizar las filas para que todas tengan el mismo número de columnas
+    var filas = contenidoCsv.split('\n');
+    var datos = [];
+    var numMaxColumnas = 0;
+
+    // Encuentra el número máximo de columnas
+    filas.forEach(function(fila) {
+      var columnas = fila.split(',');
+      numMaxColumnas = Math.max(numMaxColumnas, columnas.length);
+    });
+
+    // Normaliza las filas para que todas tengan el mismo número de columnas
+    filas.forEach(function(fila) {
+      var columnas = fila.split(',');
+      while (columnas.length < numMaxColumnas) {
+        columnas.push(""); // Añade celdas vacías para igualar el número de columnas
+      }
+      datos.push(columnas);
+    });
+
+    // Ajusta las dimensiones de la hoja según los datos
+    hoja.insertRows(1, Math.max(0, datos.length - 1));
+    hoja.insertColumns(1, Math.max(0, numMaxColumnas - 1));
+
+    // Escribir los datos
+    if (datos.length > 0 && numMaxColumnas > 0) {
+      hoja.getRange(1, 1, datos.length, numMaxColumnas).setValues(datos);
+    }
+
+    // Mover la hoja de cálculo a la carpeta de origen
+    var archivoCreado = DriveApp.getFileById(nuevaHoja.getId());
+    var archivoFinal = archivoCreado.makeCopy(nombreArchivo, carpeta);
+    DriveApp.removeFile(archivoCreado);
+  }
+}
