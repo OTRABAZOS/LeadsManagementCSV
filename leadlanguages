@@ -1,7 +1,7 @@
 // Función que consolida datos de contactos o leads desde varios ficheros a uno
 // Paso 1: Rastrear las Hojas de Cálculo en la Carpeta Especificada
 function actualizarIdiomas() {
-  var spreadsheetId = '1GPRJZh7zkLAShWHBgyxTLTcDzr-kPEsQ1PL-o8jvAKw'; // Reemplaza con el ID real de tu hoja de cálculo
+  var spreadsheetId = 'TU_ID_DE_HOJA_DE_CALCULO_AQUI'; // Reemplaza con el ID real de tu hoja de cálculo
   var hoja = SpreadsheetApp.openById(spreadsheetId).getActiveSheet();
   var rango = hoja.getDataRange();
   var valores = rango.getValues();
