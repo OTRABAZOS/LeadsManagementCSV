@@ -1,0 +1,149 @@
+// Función que consolida datos de contactos o leads desde varios ficheros a uno
+// Paso 1: Rastrear las Hojas de Cálculo en la Carpeta Especificada
+function actualizarIdiomas() {
+  var spreadsheetId = '1GPRJZh7zkLAShWHBgyxTLTcDzr-kPEsQ1PL-o8jvAKw'; // Reemplaza con el ID real de tu hoja de cálculo
+  var hoja = SpreadsheetApp.openById(spreadsheetId).getActiveSheet();
+  var rango = hoja.getDataRange();
+  var valores = rango.getValues();
+  
+  var columnaPais = -1;
+  var columnaIdioma = -1;
+  var filaEncabezado = valores[0];
+  
+  // Buscar las columnas 'Country'/'País' e 'Idioma'
+  filaEncabezado.forEach(function(nombreColumna, index) {
+    var columnaNormalizada = normalizarTexto(nombreColumna);
+    if (columnaNormalizada === "country" || columnaNormalizada === "pais") {
+      columnaPais = index;
+    } else if (columnaNormalizada === "idioma") {
+      columnaIdioma = index;
+    }
+  });
+  
+  // Si no se encuentra la columna 'Country'/'País', se lanza un error o se puede manejar de otra manera
+  if (columnaPais === -1) {
+    throw "La columna 'Country' o 'País' no se encontró.";
+  }
+  
+  // Si no existe la columna de Idioma, agregarla
+  if (columnaIdioma === -1) {
+    columnaIdioma = filaEncabezado.length; // La nueva columna será al final
+    hoja.getRange(1, columnaIdioma + 1).setValue("Idioma");
+  }
+
+  // Actualizar la columna de idiomas según el país
+  for (var j = 1; j < valores.length; j++) {
+    var pais = valores[j][columnaPais] || "";
+    var idioma = determinarIdioma(pais);
+    hoja.getRange(j + 1, columnaIdioma + 1).setValue(idioma);
+ 
+  // Log cada 100 celdas procesadas
+    if (j % 100 === 0) {
+      console.log("Procesadas " + j + " celdas.");
+    }
+  }
+  
+  // Log final para indicar la finalización y el total de celdas procesadas
+  console.log("Proceso completado. Total de celdas procesadas: " + (valores.length - 1));
+}
+
+function determinarIdioma(pais) {
+  // Normalizar el país a minúsculas y sin acentos
+  pais = normalizarTexto(pais);
+  
+  var idiomaPorPais = {
+  "afganistan": "PS",
+  "antigua y barbuda": "EN",
+  "argentina": "ES",
+  "armenia": "HY",
+  "aruba": "EN",
+  "australia": "EN",
+  "austria": "DE",
+  "bahamas": "EN",
+  "barbados": "EN",
+  "belgica": "NL", // Puede necesitar ajuste si se desean reflejar los otros idiomas oficiales
+  "belice": "EN",
+  "bolivia": "ES",
+  "bosnia": "BS", // "BS" es para el idioma, pero "BA" sería el código de país; parece haber un error aquí
+  "brasil": "PT",
+  "bulgaria": "BG",
+  "canada": "EN", // Este código es para el inglés; considera usar "FR" para el francés o manejar ambos idiomas
+  "chile": "ES",
+  "china": "ZH",
+  "colombia": "ES",
+  "costa rica": "ES",
+  "croacia": "HR",
+  "cuba": "ES",
+  "curacao": "NL",
+  "republica checa": "CS",
+  "dinamarca": "DA",
+  "republica dominicana": "ES",
+  "ecuador": "ES",
+  "el salvador": "ES",
+  "estonia": "ET",
+  "finlandia": "FI",
+  "francia": "FR",
+  "alemania": "DE",
+  "grecia": "EL",
+  "guatemala": "ES",
+  "guyana": "EN",
+  "haiti": "FR",
+  "honduras": "ES",
+  "hungria": "HU",
+  "islandia": "IS",
+  "india": "IN",
+  "indonesia": "ID",
+  "iran": "FA",
+  "irlanda": "EN",
+  "italia": "IT",
+  "jamaica": "EN",
+  "japon": "JP",
+  "corea": "KP", // Nota: "KP" es para Corea del Norte; Corea del Sur sería "KR"
+  "letonia": "LV",
+  "luxemburgo": "LU",
+  "libano": "AR",
+  "liechtenstein": "DE",
+  "lituania": "LT",
+  "mexico": "ES",
+  "montenegro": "CNR", // "CNR" no es un código ISO 639-1; podría ser un error. Para Montenegro, el código de idioma podría ser "SR" para serbio.
+  "marruecos": "AR",
+  "holanda": "NL",
+  "nueva zelanda": "EN",
+  "nicaragua": "ES",
+  "noruega": "NO",
+  "panama": "ES",
+  "paraguay": "ES",
+  "peru": "ES",
+  "filipinas": "EN",
+  "polonia": "PL",
+  "portugal": "PT",
+  "puerto rico": "ES",
+  "qatar": "AR",
+  "rumania": "RO",
+  "rusia": "RU",
+  "santa lucia": "EN",
+  "arabia saudita": "AR",
+  "serbia": "RS",
+  "eslovaquia": "SK",
+  "eslovenia": "SI",
+  "sudafrica": "EN",
+  "espana": "ES",
+  "suecia": "SE",
+  "suiza": "DE", // Suiza tiene varios idiomas oficiales; puede necesitar ajuste para reflejar esto
+  "trinidad y tobago": "EN",
+  "tunez": "AR",
+  "turquia": "TR",
+  "ucrania": "UK",
+  "reino unido": "EN",
+  "estados unidos": "EN",
+  "uruguay": "ES",
+  "venezuela": "ES",
+  "islas virgenes": "EN"
+};
+  
+  return idiomaPorPais[pais] || "EN"; // Devuelve 'EN' si el país no está en la lista
+}
+
+function normalizarTexto(texto) {
+  return texto.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+}
