@@ -1,6 +1,6 @@
 // Funcion k convierte archivos CSV a Google Sheet
 function convertirCSVaHojasDeCalculoMejorado() {
-  var carpetaId = '15335wcHgiVo4RA1hWOB0uC55GOl5ybdh'; // Reemplaza esto con el ID real de tu carpeta
+  var carpetaId = 'TU_ID_DE_CARPETA_AQUI'; // Reemplaza esto con el ID real de tu carpeta
   var carpeta = DriveApp.getFolderById(carpetaId);
   var archivos = carpeta.getFilesByType(MimeType.CSV);
 
