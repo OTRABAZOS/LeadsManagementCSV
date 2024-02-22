@@ -1,7 +1,7 @@
 // Función que consolida datos de contactos o leads desde varios ficheros a uno
 // Paso 1: Rastrear las Hojas de Cálculo en la Carpeta Especificada
 function actualizarIdiomas() {
-  var spreadsheetId = 'TU_ID_DE_HOJA_DE_CALCULO_AQUI'; // Reemplaza con el ID real de tu hoja de cálculo
+  var spreadsheetId = '1GPRJZh7zkLAShWHBgyxTLTcDzr-kPEsQ1PL-o8jvAKw'; // Reemplaza con el ID real de tu hoja de cálculo
   var hoja = SpreadsheetApp.openById(spreadsheetId).getActiveSheet();
   var rango = hoja.getDataRange();
   var valores = rango.getValues();
@@ -55,6 +55,7 @@ function determinarIdioma(pais) {
   "afganistan": "PS",
   "antigua y barbuda": "EN",
   "argentina": "ES",
+  "andorra": "ES",
   "armenia": "HY",
   "aruba": "EN",
   "australia": "EN",
@@ -78,6 +79,7 @@ function determinarIdioma(pais) {
   "republica checa": "CS",
   "dinamarca": "DA",
   "republica dominicana": "ES",
+  "dominican republic": "ES",
   "ecuador": "ES",
   "el salvador": "ES",
   "estonia": "ET",
@@ -128,6 +130,7 @@ function determinarIdioma(pais) {
   "eslovenia": "SI",
   "sudafrica": "EN",
   "espana": "ES",
+  "spain": "ES",
   "suecia": "SE",
   "suiza": "DE", // Suiza tiene varios idiomas oficiales; puede necesitar ajuste para reflejar esto
   "trinidad y tobago": "EN",
