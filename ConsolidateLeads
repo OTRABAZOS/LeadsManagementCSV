@@ -1,0 +1,134 @@
+// Función que consolida datos de contactos o leads desde varios ficheros a uno
+// Paso 1: Rastrear las Hojas de Cálculo en la Carpeta Especificada
+function findAndConsolidateSheets() {
+  var folderId = '15335wcHgiVo4RA1hWOB0uC55GOl5ybdh';
+  var folder = DriveApp.getFolderById(folderId);
+  var filesIterator = folder.getFilesByType(MimeType.GOOGLE_SHEETS);
+  var spreadsheetIds = [];
+
+  while (filesIterator.hasNext()) {
+    var file = filesIterator.next();
+    spreadsheetIds.push(file.getId());
+  }
+
+  if (spreadsheetIds.length > 0) {
+    Logger.log("Se encontraron " + spreadsheetIds.length + " hojas de cálculo para procesar.");
+    consolidateData(spreadsheetIds);
+  } else {
+    Logger.log("No se encontraron hojas de cálculo en la carpeta.");
+  }
+}
+// Paso 2 Definir los Campos a Buscar
+var fieldMappings = {
+  'email': ['email', 'correo', 'correo electrónico', 'email1', 'email2', 'email3', 'email5', 'email6'],
+  'firstName': ['nombre', 'nombre persona', 'first name', 'first_name', 'Nombre', 'name'],
+  'lastName': ['apellido', 'apellido persona', 'last name', 'last_name'],
+  'companyName': ['nombre empresa', 'empresa', 'company name', 'company_name', 'Organización', 'Organizacion', 'organizacion', 'current_employer'],
+  'industry': ['sector', 'industria', 'industry' ,'person_industry'],
+  'country': ['pais', 'país', 'country', 'person_country'],
+  'city': ['ciudad', 'city', 'person_city'],
+  'urls': ['url', 'enlace', 'link', 'person_linkedin_url', 'linkedin_url'],
+  'urls Company': ['company_linkedin_url'],
+  'currentPosition': ['posición actual', 'current_position', 'cargo actual', 'current_title'],
+  'companySize': ['tamaño empresa', 'company_size', 'número de empleados'],
+  'personLinkedinUrl': ['url linkedin persona', 'person_linkedin_url'],
+  'companyLinkedinUrl': ['url linkedin empresa', 'company_linkedin_url'],
+  'creado': ['created_on','fecha',]
+};
+// Paso 3: Leer y Consolidar los Datos (Revisado para evitar duplicados)
+function consolidateData(spreadsheetIds) {
+  var allData = [];
+  var headers = Object.keys(fieldMappings); // Usamos los keys de fieldMappings como base para los encabezados
+  var uniqueEmails = new Set(); // Usamos un Set para rastrear emails únicos
+
+  spreadsheetIds.forEach(function(spreadsheetId) {
+    var spreadsheet = SpreadsheetApp.openById(spreadsheetId); // Abrir la hoja de cálculo completa
+    var sheet = spreadsheet.getSheets()[0]; // Asumiendo que deseas procesar la primera hoja de cada libro
+    var data = sheet.getDataRange().getValues();
+    
+    // Añadir el nombre de la hoja de cálculo al registro
+    Logger.log("Procesando hoja de cálculo con ID: " + spreadsheetId + " (" + spreadsheet.getName() + "), filas encontradas: " + data.length);
+
+    if (data.length > 1) {
+      var sheetHeaders = data[0].map(header => header.toLowerCase().trim());
+      var dataIndexes = mapDataIndexes(sheetHeaders);
+
+      for (var i = 1; i < data.length; i++) {
+        var emailIndex = sheetHeaders.findIndex(header => fieldMappings['email'].includes(header)); // Encuentra el índice del email en los encabezados
+        var email = emailIndex > -1 ? data[i][emailIndex].toLowerCase().trim() : "";
+        
+        // Verificar si el email ya fue procesado
+        if (email && !uniqueEmails.has(email)) {
+          uniqueEmails.add(email); // Marcar el email como procesado
+          
+          // Construir rowData asegurándose de que cada campo mapeado tenga un lugar
+          var rowData = headers.map(header => {
+            var index = dataIndexes[header];
+            return index !== -1 ? data[i][index] : "";
+          });
+          allData.push(rowData);
+        }
+      }
+    }
+  });
+
+  if (allData.length > 0) {
+    Logger.log("Total de filas consolidadas para escribir: " + allData.length);
+    // Llama a la función que añade los datos a la hoja "Master Contactos" existente
+    addDataToConsolidatedSheet(allData, headers); // Asegúrate de que esta función esté definida correctamente
+  } else {
+    Logger.log("No se encontraron datos para consolidar.");
+  }
+}
+// Paso 4 Mapear indices de Datos Basados en los Encabezados
+function mapDataIndexes(headers) {
+  var dataIndexes = {};
+  for (var field in fieldMappings) {
+    dataIndexes[field] = headers.findIndex(header => 
+      fieldMappings[field].some(alias => header.includes(alias)));
+  }
+  return dataIndexes;
+}
+// Paso 5 Añadir Datos a la Hoja de Cálculo Existente sin Eliminar Datos Previos
+function addDataToConsolidatedSheet(consolidatedData, headers) {
+  var folderId = '15335wcHgiVo4RA1hWOB0uC55GOl5ybdh';
+  var spreadsheet = null;
+  var sheet = null;
+  var files = DriveApp.getFolderById(folderId).getFiles();
+
+  // Buscar la hoja de cálculo "Master Contactos" en la carpeta
+  while (files.hasNext()) {
+    var file = files.next();
+    if (file.getName() === "Master Contactos") {
+      spreadsheet = SpreadsheetApp.openById(file.getId());
+      sheet = spreadsheet.getSheets()[0]; // Asumiendo que queremos añadir datos a la primera hoja
+      break;
+    }
+  }
+
+  // Si no se encuentra, se crea una nueva hoja con ese nombre
+  if (!spreadsheet) {
+    spreadsheet = SpreadsheetApp.create("Master Contactos");
+    sheet = spreadsheet.getSheets()[0];
+    sheet.appendRow(headers); // Añadir encabezados si la hoja es nueva
+  }
+
+  // Cargar los datos existentes para comprobar duplicados
+  var existingData = sheet.getDataRange().getValues();
+  var emailsColumnIndex = headers.indexOf('email') + 1; // Asumiendo 'email' es tu criterio de indexación
+  var existingEmails = existingData.slice(1).map(row => row[emailsColumnIndex - 1].toLowerCase());
+
+  // Filtrar datos consolidados para eliminar duplicados
+  var newData = consolidatedData.filter(row => {
+    var email = row[emailsColumnIndex - 1].toLowerCase();
+    return !existingEmails.includes(email);
+  });
+
+  // Encontrar la última fila con datos para saber dónde empezar a añadir los nuevos
+  var lastRow = sheet.getLastRow();
+
+  // Añadir los nuevos datos filtrados
+  if (newData.length > 0) {
+    sheet.getRange(lastRow + 1, 1, newData.length, headers.length).setValues(newData);
+  }
+}
