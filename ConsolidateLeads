@@ -1,7 +1,7 @@
 // Función que consolida datos de contactos o leads desde varios ficheros a uno
 // Paso 1: Rastrear las Hojas de Cálculo en la Carpeta Especificada
 function findAndConsolidateSheets() {
-  var folderId = '15335wcHgiVo4RA1hWOB0uC55GOl5ybdh';
+  var folderId = 'TU_ID_DE_CARPETA_AQUI'; // El folderId esta en la URL de la carpeta
   var folder = DriveApp.getFolderById(folderId);
   var filesIterator = folder.getFilesByType(MimeType.GOOGLE_SHEETS);
   var spreadsheetIds = [];
@@ -91,7 +91,7 @@ function mapDataIndexes(headers) {
 }
 // Paso 5 Añadir Datos a la Hoja de Cálculo Existente sin Eliminar Datos Previos
 function addDataToConsolidatedSheet(consolidatedData, headers) {
-  var folderId = '15335wcHgiVo4RA1hWOB0uC55GOl5ybdh';
+  var folderId = 'TU_ID_DE_CARPETA_AQUI'; // El folderId esta en la URL de la carpeta
   var spreadsheet = null;
   var sheet = null;
   var files = DriveApp.getFolderById(folderId).getFiles();
